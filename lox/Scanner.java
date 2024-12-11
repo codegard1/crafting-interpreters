@@ -1,11 +1,11 @@
-package com.craftinginterpreters.lox;
+package lox;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.craftinginterpreters.lox.TokenType.*;
+import static lox.TokenType.*;
 
 class Scanner {
   private final String source;
@@ -13,6 +13,27 @@ class Scanner {
   private int start = 0;
   private int current = 0;
   private int line = 1;
+  private static final Map<String, TokenType> keywords;
+
+  static {
+    keywords = new HashMap<>();
+    keywords.put("and", AND);
+    keywords.put("class", CLASS);
+    keywords.put("else", ELSE);
+    keywords.put("false", FALSE);
+    keywords.put("for", FOR);
+    keywords.put("fun", FUN);
+    keywords.put("if", IF);
+    keywords.put("nil", NIL);
+    keywords.put("or", OR);
+    keywords.put("print", PRINT);
+    keywords.put("return", RETURN);
+    keywords.put("super", SUPER);
+    keywords.put("this", THIS);
+    keywords.put("true", TRUE);
+    keywords.put("var", VAR);
+    keywords.put("while", WHILE);
+  }
 
   Scanner(String source) {
     this.source = source;
@@ -43,7 +64,7 @@ class Scanner {
         addToken(LEFT_BRACE);
         break;
       case '}':
-        addToken(RIGHT_BRACEN);
+        addToken(RIGHT_BRACE);
         break;
       case ',':
         addToken(COMMA);
@@ -102,11 +123,25 @@ class Scanner {
       default:
         if (isDigit(c)) {
           number();
+        } else if (isAlpha(c)) {
+          identifier();
         } else {
           Lox.error(line, "Unexpected character.");
         }
         break;
     }
+  }
+
+  private void identifier() {
+    while (isAlphaNumeric(peek()))
+      advance();
+
+    // Check if the identifier is a keyword
+    String text = source.substring(start, current);
+    TokenType type = keywords.get(text);
+    if (type == null)
+      type = IDENTIFIER;
+    addToken(type);
   }
 
   private void number() {
@@ -161,9 +196,21 @@ class Scanner {
     return source.charAt(current);
   }
 
-  private char peekNext(){
-    if(current + 1 >= source.length()) return '\0';
-    return source.charAt(current+1);
+  private char peekNext() {
+    if (current + 1 >= source.length())
+      return '\0';
+    return source.charAt(current + 1);
+  }
+
+  // Check if a character is alphabetical or an underscore
+  private boolean isAlpha(char c) {
+    return (c >= 'a' && c <= 'z') ||
+        (c >= 'A' && c <= 'Z') ||
+        c == '_';
+  }
+
+  private boolean isAlphaNumeric(char c) {
+    return isAlpha(c) || isDigit(c);
   }
 
   // Check if a character is a number
